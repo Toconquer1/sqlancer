@@ -143,7 +143,23 @@ public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOpt
         globalState.getState().logStatement("USE " + databaseName);
         String url = String.format("jdbc:mysql://%s:%d?serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true",
                 host, port);
-        Connection con = DriverManager.getConnection(url, username, password);
+        Connection con = null;
+        for (int i = 0; i < 20; i++) {
+            try {
+                con = DriverManager.getConnection(url, username, password);
+                break;
+            } catch (SQLException e) {
+                if (i == 19) {
+                    throw e;
+                }
+                try {
+                    System.err.println(String.format("Connection failed, retrying... (%d/20)", i + 1));
+                    Thread.sleep(5000);
+                } catch (InterruptedException interruptedException) {
+                    // ignore
+                }
+            }
+        }
         try (Statement s = con.createStatement()) {
             s.execute("DROP DATABASE IF EXISTS " + databaseName);
         }

@@ -82,38 +82,21 @@ public class TiDBProvider extends SQLProviderAdapter<TiDBGlobalState, TiDBOption
     }
 
     private static int mapActions(TiDBGlobalState globalState, Action a) {
-        Randomly r = globalState.getRandomly();
+        int nrPerformed = 0;
         switch (a) {
-        case ANALYZE_TABLE:
-        case CREATE_INDEX:
-            return r.getInteger(0, 2);
-        case INSERT:
-            return r.getInteger(0, globalState.getOptions().getMaxNumberInserts());
-        case TRUNCATE:
-        case DELETE:
-        case ADMIN_CHECKSUM_TABLE:
-            return r.getInteger(0, 2);
-        case SET:
-        case UPDATE:
-            return r.getInteger(0, 5);
-        case VIEW_GENERATOR:
-            // https://github.com/tidb-challenge-program/bug-hunting-issue/issues/8
-            return r.getInteger(0, 2);
-        case ALTER_TABLE:
-            return r.getInteger(0, 10); // https://github.com/tidb-challenge-program/bug-hunting-issue/issues/10
-        case CREATE_TABLE:
-        case DROP_TABLE:
-        case DROP_VIEW:
-            return 0;
-        default:
-            throw new AssertionError(a);
+            case INSERT:
+                nrPerformed = 30;
+                break;
+            default:
+                nrPerformed = 0;
+                break;
         }
-
+        return nrPerformed;
     }
 
     @Override
     public void generateDatabase(TiDBGlobalState globalState) throws Exception {
-        for (int i = 0; i < Randomly.fromOptions(1, 2); i++) {
+        while (globalState.getSchema().getDatabaseTables().size() < 1) {
             boolean success;
             do {
                 SQLQueryAdapter qt = new TiDBTableGenerator().getQuery(globalState);
@@ -183,8 +166,24 @@ public class TiDBProvider extends SQLProviderAdapter<TiDBGlobalState, TiDBOption
 
         String databaseName = globalState.getDatabaseName();
         String url = String.format("jdbc:mysql://%s:%d/", host, port);
-        Connection con = DriverManager.getConnection(url, globalState.getOptions().getUserName(),
-                globalState.getOptions().getPassword());
+        Connection con = null;
+        for (int i = 0; i < 20; i++) {
+            try {
+                con = DriverManager.getConnection(url, globalState.getOptions().getUserName(),
+                        globalState.getOptions().getPassword());
+                break;
+            } catch (SQLException e) {
+                if (i == 19) {
+                    throw e;
+                }
+                try {
+                    System.err.println(String.format("Connection failed, retrying... (%d/20)", i + 1));
+                    Thread.sleep(5000);
+                } catch (InterruptedException interruptedException) {
+                    // ignore
+                }
+            }
+        }
         globalState.getState().logStatement("USE test");
         globalState.getState().logStatement("DROP DATABASE IF EXISTS " + databaseName);
         String createDatabaseCommand = "CREATE DATABASE " + databaseName;

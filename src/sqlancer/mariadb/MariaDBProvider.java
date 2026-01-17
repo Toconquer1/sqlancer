@@ -69,12 +69,12 @@ public class MariaDBProvider extends SQLProviderAdapter<MariaDBGlobalState, Mari
             Action action = Action.values()[i];
             int nrPerformed = 0;
             switch (action) {
-            case INSERT:
-                nrPerformed = 30;
-                break;
-            default:
-                nrPerformed = 0;
-                break;
+                case INSERT:
+                    nrPerformed = 30;
+                    break;
+                default:
+                    nrPerformed = 0;
+                    break;
             }
             if (nrPerformed != 0) {
                 actions.add(action);
@@ -100,41 +100,41 @@ public class MariaDBProvider extends SQLProviderAdapter<MariaDBGlobalState, Mari
             SQLQueryAdapter query;
             try {
                 switch (nextAction) {
-                case CHECKSUM:
-                    query = MariaDBTableAdminCommandGenerator.checksumTable(globalState.getSchema());
-                    break;
-                case CHECK_TABLE:
-                    query = MariaDBTableAdminCommandGenerator.checkTable(globalState.getSchema());
-                    break;
-                case TRUNCATE:
-                    query = MariaDBTruncateGenerator.truncate(globalState.getSchema());
-                    break;
-                case REPAIR_TABLE:
-                    query = MariaDBTableAdminCommandGenerator.repairTable(globalState.getSchema());
-                    break;
-                case INSERT:
-                    query = MariaDBInsertGenerator.insert(globalState.getSchema(), globalState.getRandomly());
-                    break;
-                case OPTIMIZE:
-                    query = MariaDBTableAdminCommandGenerator.optimizeTable(globalState.getSchema());
-                    break;
-                case ANALYZE_TABLE:
-                    query = MariaDBTableAdminCommandGenerator.analyzeTable(globalState.getSchema());
-                    break;
-                case UPDATE:
-                    query = MariaDBUpdateGenerator.update(globalState.getSchema(), globalState.getRandomly());
-                    break;
-                case CREATE_INDEX:
-                    query = MariaDBIndexGenerator.generate(globalState.getSchema());
-                    break;
-                case SET:
-                    query = MariaDBSetGenerator.set(globalState.getRandomly(), options);
-                    break;
-                case DELETE:
-                    query = MariaDBDeleteGenerator.delete(globalState.getSchema(), globalState.getRandomly());
-                    break;
-                default:
-                    throw new AssertionError(nextAction);
+                    case CHECKSUM:
+                        query = MariaDBTableAdminCommandGenerator.checksumTable(globalState.getSchema());
+                        break;
+                    case CHECK_TABLE:
+                        query = MariaDBTableAdminCommandGenerator.checkTable(globalState.getSchema());
+                        break;
+                    case TRUNCATE:
+                        query = MariaDBTruncateGenerator.truncate(globalState.getSchema());
+                        break;
+                    case REPAIR_TABLE:
+                        query = MariaDBTableAdminCommandGenerator.repairTable(globalState.getSchema());
+                        break;
+                    case INSERT:
+                        query = MariaDBInsertGenerator.insert(globalState.getSchema(), globalState.getRandomly());
+                        break;
+                    case OPTIMIZE:
+                        query = MariaDBTableAdminCommandGenerator.optimizeTable(globalState.getSchema());
+                        break;
+                    case ANALYZE_TABLE:
+                        query = MariaDBTableAdminCommandGenerator.analyzeTable(globalState.getSchema());
+                        break;
+                    case UPDATE:
+                        query = MariaDBUpdateGenerator.update(globalState.getSchema(), globalState.getRandomly());
+                        break;
+                    case CREATE_INDEX:
+                        query = MariaDBIndexGenerator.generate(globalState.getSchema());
+                        break;
+                    case SET:
+                        query = MariaDBSetGenerator.set(globalState.getRandomly(), options);
+                        break;
+                    case DELETE:
+                        query = MariaDBDeleteGenerator.delete(globalState.getSchema(), globalState.getRandomly());
+                        break;
+                    default:
+                        throw new AssertionError(nextAction);
                 }
             } catch (IgnoreMeException e) {
                 total--;
@@ -175,7 +175,23 @@ public class MariaDBProvider extends SQLProviderAdapter<MariaDBGlobalState, Mari
             port = MariaDBOptions.DEFAULT_PORT;
         }
         String url = String.format("jdbc:mariadb://%s:%d", host, port);
-        Connection con = DriverManager.getConnection(url, username, password);
+        Connection con = null;
+        for (int i = 0; i < 20; i++) {
+            try {
+                con = DriverManager.getConnection(url, username, password);
+                break;
+            } catch (SQLException e) {
+                if (i == 19) {
+                    throw e;
+                }
+                try {
+                    System.err.println(String.format("Connection failed, retrying... (%d/20)", i + 1));
+                    Thread.sleep(5000);
+                } catch (InterruptedException interruptedException) {
+                    // ignore
+                }
+            }
+        }
         try (Statement s = con.createStatement()) {
             s.execute("DROP DATABASE IF EXISTS " + globalState.getDatabaseName());
         }
