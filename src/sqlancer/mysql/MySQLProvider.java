@@ -79,67 +79,21 @@ public class MySQLProvider extends SQLProviderAdapter<MySQLGlobalState, MySQLOpt
     }
 
     private static int mapActions(MySQLGlobalState globalState, Action a) {
-        Randomly r = globalState.getRandomly();
         int nrPerformed = 0;
         switch (a) {
-        case DROP_INDEX:
-            nrPerformed = r.getInteger(0, 2);
-            break;
-        case SHOW_TABLES:
-            nrPerformed = r.getInteger(0, 1);
-            break;
-        case INSERT:
-            nrPerformed = r.getInteger(0, globalState.getOptions().getMaxNumberInserts());
-            break;
-        case REPAIR:
-            nrPerformed = r.getInteger(0, 1);
-            break;
-        case SET_VARIABLE:
-            nrPerformed = r.getInteger(0, 5);
-            break;
-        case CREATE_INDEX:
-            nrPerformed = r.getInteger(0, 5);
-            break;
-        case FLUSH:
-            nrPerformed = Randomly.getBooleanWithSmallProbability() ? r.getInteger(0, 1) : 0;
-            break;
-        case OPTIMIZE:
-            // seems to yield low CPU utilization
-            nrPerformed = Randomly.getBooleanWithSmallProbability() ? r.getInteger(0, 1) : 0;
-            break;
-        case RESET:
-            // affects the global state, so do not execute
-            nrPerformed = globalState.getOptions().getNumberConcurrentThreads() == 1 ? r.getInteger(0, 1) : 0;
-            break;
-        case CHECKSUM:
-        case CHECK_TABLE:
-        case ANALYZE_TABLE:
-            nrPerformed = r.getInteger(0, 2);
-            break;
-        case ALTER_TABLE:
-            nrPerformed = r.getInteger(0, 5);
-            break;
-        case TRUNCATE_TABLE:
-            nrPerformed = r.getInteger(0, 2);
-            break;
-        case SELECT_INFO:
-            nrPerformed = r.getInteger(0, 10);
-            break;
-        case UPDATE:
-            nrPerformed = r.getInteger(0, 10);
-            break;
-        case DELETE:
-            nrPerformed = r.getInteger(0, 10);
-            break;
-        default:
-            throw new AssertionError(a);
+            case INSERT:
+                nrPerformed = 30;
+                break;
+            default:
+                nrPerformed = 0;
+                break;
         }
         return nrPerformed;
     }
 
     @Override
     public void generateDatabase(MySQLGlobalState globalState) throws Exception {
-        while (globalState.getSchema().getDatabaseTables().size() < Randomly.getNotCachedInteger(1, 2)) {
+        while (globalState.getSchema().getDatabaseTables().size() < 1) {
             String tableName = DBMSCommon.createTableName(globalState.getSchema().getDatabaseTables().size());
             SQLQueryAdapter createTable = MySQLTableGenerator.generate(globalState, tableName);
             globalState.executeStatement(createTable);

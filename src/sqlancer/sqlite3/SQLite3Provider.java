@@ -123,57 +123,13 @@ public class SQLite3Provider extends SQLProviderAdapter<SQLite3GlobalState, SQLi
 
     private static int mapActions(SQLite3GlobalState globalState, Action a) {
         int nrPerformed = 0;
-        Randomly r = globalState.getRandomly();
         switch (a) {
-        case CREATE_VIEW:
-            nrPerformed = r.getInteger(0, 2);
-            break;
-        case DELETE:
-        case DROP_VIEW:
-        case DROP_INDEX:
-            nrPerformed = r.getInteger(0, 0);
-            break;
-        case ALTER:
-            nrPerformed = r.getInteger(0, 0);
-            break;
-        case EXPLAIN:
-        case CREATE_TRIGGER:
-        case DROP_TABLE:
-            nrPerformed = r.getInteger(0, 0);
-            break;
-        case VACUUM:
-        case CHECK_RTREE_TABLE:
-            nrPerformed = r.getInteger(0, 3);
-            break;
-        case INSERT:
-            nrPerformed = r.getInteger(0, globalState.getOptions().getMaxNumberInserts());
-            break;
-        case MANIPULATE_STAT_TABLE:
-            nrPerformed = r.getInteger(0, 5);
-            break;
-        case CREATE_INDEX:
-            nrPerformed = r.getInteger(0, 5);
-            break;
-        case VIRTUAL_TABLE_ACTION:
-        case UPDATE:
-            nrPerformed = r.getInteger(0, 30);
-            break;
-        case PRAGMA:
-            nrPerformed = r.getInteger(0, 20);
-            break;
-        case CREATE_TABLE:
-        case CREATE_VIRTUALTABLE:
-        case CREATE_RTREETABLE:
-            nrPerformed = 0;
-            break;
-        case TRANSACTION_START:
-        case REINDEX:
-        case ANALYZE:
-        case ROLLBACK_TRANSACTION:
-        case COMMIT:
-        default:
-            nrPerformed = r.getInteger(1, 10);
-            break;
+            case INSERT:
+                nrPerformed = 30;
+                break;
+            default:
+                nrPerformed = 0;
+                break;
         }
         return nrPerformed;
     }
@@ -184,14 +140,8 @@ public class SQLite3Provider extends SQLProviderAdapter<SQLite3GlobalState, SQLi
         globalState.setRandomly(r);
         if (globalState.getDbmsSpecificOptions().generateDatabase) {
 
-            addSensiblePragmaDefaults(globalState);
+            // addSensiblePragmaDefaults(globalState);
             int nrTablesToCreate = 1;
-            if (Randomly.getBoolean()) {
-                nrTablesToCreate++;
-            }
-            while (Randomly.getBooleanWithSmallProbability()) {
-                nrTablesToCreate++;
-            }
             int i = 0;
 
             do {
@@ -199,12 +149,13 @@ public class SQLite3Provider extends SQLProviderAdapter<SQLite3GlobalState, SQLi
                 globalState.executeStatement(tableQuery);
             } while (globalState.getSchema().getDatabaseTables().size() < nrTablesToCreate);
             assert globalState.getSchema().getTables().getTables().size() == nrTablesToCreate;
-            checkTablesForGeneratedColumnLoops(globalState);
-            if (globalState.getDbmsSpecificOptions().testDBStats && Randomly.getBooleanWithSmallProbability()) {
-                SQLQueryAdapter tableQuery = new SQLQueryAdapter(
-                        "CREATE VIRTUAL TABLE IF NOT EXISTS stat USING dbstat(main)");
-                globalState.executeStatement(tableQuery);
-            }
+            // checkTablesForGeneratedColumnLoops(globalState);
+            // if (globalState.getDbmsSpecificOptions().testDBStats &&
+            // Randomly.getBooleanWithSmallProbability()) {
+            // SQLQueryAdapter tableQuery = new SQLQueryAdapter(
+            // "CREATE VIRTUAL TABLE IF NOT EXISTS stat USING dbstat(main)");
+            // globalState.executeStatement(tableQuery);
+            // }
             StatementExecutor<SQLite3GlobalState, Action> se = new StatementExecutor<>(globalState, Action.values(),
                     SQLite3Provider::mapActions, (q) -> {
                         if (q.couldAffectSchema() && globalState.getSchema().getDatabaseTables().isEmpty()) {
@@ -213,12 +164,13 @@ public class SQLite3Provider extends SQLProviderAdapter<SQLite3GlobalState, SQLi
                     });
             se.executeStatements();
 
-            SQLQueryAdapter query = SQLite3TransactionGenerator.generateCommit(globalState);
-            globalState.executeStatement(query);
+            // SQLQueryAdapter query =
+            // SQLite3TransactionGenerator.generateCommit(globalState);
+            // globalState.executeStatement(query);
 
             // also do an abort for DEFERRABLE INITIALLY DEFERRED
-            query = SQLite3TransactionGenerator.generateRollbackTransaction(globalState);
-            globalState.executeStatement(query);
+            // query = SQLite3TransactionGenerator.generateRollbackTransaction(globalState);
+            // globalState.executeStatement(query);
         }
     }
 
@@ -245,21 +197,21 @@ public class SQLite3Provider extends SQLProviderAdapter<SQLite3GlobalState, SQLi
             options.remove(TableType.RTREE);
         }
         switch (Randomly.fromList(options)) {
-        case NORMAL:
-            String tableName = DBMSCommon.createTableName(i);
-            tableQuery = SQLite3TableGenerator.createTableStatement(tableName, globalState);
-            break;
-        case FTS:
-            String ftsTableName = "v" + DBMSCommon.createTableName(i);
-            tableQuery = SQLite3CreateVirtualFTSTableGenerator.createTableStatement(ftsTableName,
-                    globalState.getRandomly());
-            break;
-        case RTREE:
-            String rTreeTableName = "rt" + i;
-            tableQuery = SQLite3CreateVirtualRtreeTabelGenerator.createTableStatement(rTreeTableName, globalState);
-            break;
-        default:
-            throw new AssertionError();
+            case NORMAL:
+                String tableName = DBMSCommon.createTableName(i);
+                tableQuery = SQLite3TableGenerator.createTableStatement(tableName, globalState);
+                break;
+            case FTS:
+                String ftsTableName = "v" + DBMSCommon.createTableName(i);
+                tableQuery = SQLite3CreateVirtualFTSTableGenerator.createTableStatement(ftsTableName,
+                        globalState.getRandomly());
+                break;
+            case RTREE:
+                String rTreeTableName = "rt" + i;
+                tableQuery = SQLite3CreateVirtualRtreeTabelGenerator.createTableStatement(rTreeTableName, globalState);
+                break;
+            default:
+                throw new AssertionError();
         }
         return tableQuery;
     }

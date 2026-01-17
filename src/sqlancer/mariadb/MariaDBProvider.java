@@ -55,7 +55,7 @@ public class MariaDBProvider extends SQLProviderAdapter<MariaDBGlobalState, Mari
     public void generateDatabase(MariaDBGlobalState globalState) throws Exception {
         MainOptions options = globalState.getOptions();
 
-        while (globalState.getSchema().getDatabaseTables().size() < Randomly.getNotCachedInteger(1, 3)) {
+        while (globalState.getSchema().getDatabaseTables().size() < 1) {
             String tableName = DBMSCommon.createTableName(globalState.getSchema().getDatabaseTables().size());
             SQLQueryAdapter createTable = MariaDBTableGenerator.generate(tableName, globalState.getRandomly(),
                     globalState.getSchema());
@@ -69,27 +69,12 @@ public class MariaDBProvider extends SQLProviderAdapter<MariaDBGlobalState, Mari
             Action action = Action.values()[i];
             int nrPerformed = 0;
             switch (action) {
-            case CHECKSUM:
-            case CHECK_TABLE:
-            case TRUNCATE:
-            case REPAIR_TABLE:
-            case OPTIMIZE:
-            case ANALYZE_TABLE:
-            case UPDATE:
-            case CREATE_INDEX:
-                nrPerformed = globalState.getRandomly().getInteger(0, 2);
-                break;
-            case DELETE:
-                nrPerformed = globalState.getRandomly().getInteger(0, 2);
-                break;
-            case SET:
-                nrPerformed = 20;
-                break;
             case INSERT:
-                nrPerformed = globalState.getRandomly().getInteger(0, options.getMaxNumberInserts());
+                nrPerformed = 30;
                 break;
             default:
-                throw new AssertionError(action);
+                nrPerformed = 0;
+                break;
             }
             if (nrPerformed != 0) {
                 actions.add(action);

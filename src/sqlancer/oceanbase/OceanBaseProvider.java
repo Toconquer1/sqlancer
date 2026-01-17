@@ -61,48 +61,21 @@ public class OceanBaseProvider extends SQLProviderAdapter<OceanBaseGlobalState, 
     }
 
     private static int mapActions(OceanBaseGlobalState globalState, Action a) {
-        Randomly r = globalState.getRandomly();
         int nrPerformed = 0;
         switch (a) {
-        case DROP_INDEX:
-            nrPerformed = r.getInteger(0, 2);
-            break;
-        case SHOW_TABLES:
-            nrPerformed = r.getInteger(0, 1);
-            break;
-        case CREATE_TABLE:
-            nrPerformed = r.getInteger(0, 1);
-            break;
         case INSERT:
-            nrPerformed = r.getInteger(0, globalState.getOptions().getMaxNumberInserts());
-            break;
-        case CREATE_INDEX:
-            nrPerformed = r.getInteger(0, 5);
-            break;
-        case UPDATE:
-            nrPerformed = r.getInteger(0, 5);
-            break;
-        case ALTER_TABLE:
-            nrPerformed = r.getInteger(0, 5);
-            break;
-        case TRUNCATE_TABLE:
-            nrPerformed = r.getInteger(0, 2);
-            break;
-        case SELECT_INFO:
-            nrPerformed = r.getInteger(0, 10);
-            break;
-        case DELETE:
-            nrPerformed = r.getInteger(0, 10);
+            nrPerformed = 30;
             break;
         default:
-            throw new AssertionError(a);
+            nrPerformed = 0;
+            break;
         }
         return nrPerformed;
     }
 
     @Override
     public void generateDatabase(OceanBaseGlobalState globalState) throws Exception {
-        while (globalState.getSchema().getDatabaseTables().size() < Randomly.smallNumber() + 1) {
+        while (globalState.getSchema().getDatabaseTables().size() < 1) {
             String tableName = DBMSCommon.createTableName(globalState.getSchema().getDatabaseTables().size());
             SQLQueryAdapter createTable = OceanBaseTableGenerator.generate(globalState, tableName);
             globalState.executeStatement(createTable);
