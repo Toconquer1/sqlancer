@@ -141,7 +141,7 @@ public class SQLite3Provider extends SQLProviderAdapter<SQLite3GlobalState, SQLi
         if (globalState.getDbmsSpecificOptions().generateDatabase) {
 
             // addSensiblePragmaDefaults(globalState);
-            int nrTablesToCreate = 1;
+            int nrTablesToCreate = 2;
             int i = 0;
 
             do {

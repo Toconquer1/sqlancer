@@ -96,7 +96,7 @@ public class TiDBProvider extends SQLProviderAdapter<TiDBGlobalState, TiDBOption
 
     @Override
     public void generateDatabase(TiDBGlobalState globalState) throws Exception {
-        while (globalState.getSchema().getDatabaseTables().size() < 1) {
+        while (globalState.getSchema().getDatabaseTables().size() < 2) {
             boolean success;
             do {
                 SQLQueryAdapter qt = new TiDBTableGenerator().getQuery(globalState);
